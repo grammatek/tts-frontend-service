@@ -20,9 +20,40 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n#messages/tts_frontend_message.proto\x12\x1a\x63om.grammatek.tts_frontend\"#\n\x10NormalizeRequest\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\"/\n\x11NormalizeResponse\x12\x1a\n\x12normalized_content\x18\x01 \x01(\t\"\x82\x01\n\x1cTokenBasedNormalizedResponse\x12\x1a\n\x12normalized_content\x18\x01 \x01(\t\x12\x46\n\ntoken_info\x18\x02 \x03(\x0b\x32\x32.com.grammatek.tts_frontend.RawNormalizedTokenInfo\"w\n\x16RawNormalizedTokenInfo\x12\x16\n\x0eoriginal_token\x18\x01 \x01(\t\x12\x18\n\x10normalized_token\x18\x02 \x01(\t\x12\x16\n\x0eoriginal_index\x18\x03 \x01(\x05\x12\x13\n\x0bhas_changed\x18\x04 \x01(\x08\"i\n\x11PreprocessRequest\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12\x43\n\x0b\x64\x65scription\x18\x02 \x01(\x0b\x32..com.grammatek.tts_frontend.PhonemeDescription\"v\n\x14PreprocessedResponse\x12\x19\n\x11processed_content\x18\x01 \x01(\t\x12\x43\n\x0b\x64\x65scription\x18\x02 \x01(\x0b\x32..com.grammatek.tts_frontend.PhonemeDescription\"\xbb\x01\n\x12PhonemeDescription\x12>\n\x08\x61lphabet\x18\x01 \x01(\x0e\x32,.com.grammatek.tts_frontend.PhoneticAlphabet\x12\x39\n\x06\x66ormat\x18\x02 \x01(\x0e\x32).com.grammatek.tts_frontend.PhonemeFormat\x12\x13\n\x0bsyllabified\x18\x03 \x01(\x08\x12\x15\n\rstress_labels\x18\x04 \x01(\x08\"N\n\x12\x41\x62iVersionResponse\x12\x38\n\x07version\x18\x01 \x01(\x0e\x32\'.com.grammatek.tts_frontend.ABI_VERSION*i\n\x10PhoneticAlphabet\x12\x1d\n\x19PHONETIC_ALPHABET_INVALID\x10\x00\x12\x19\n\x15PHONETIC_ALPHABET_IPA\x10\x01\x12\x1b\n\x17PHONETIC_ALPHABET_SAMPA\x10\x02*H\n\rPhonemeFormat\x12\x13\n\x0fPHONEME_INVALID\x10\x00\x12\x0f\n\x0bPHONEME_CMU\x10\x01\x12\x11\n\rPHONEME_PLAIN\x10\x02*A\n\x0b\x41\x42I_VERSION\x12\x17\n\x13\x41\x42I_VERSION_INVALID\x10\x00\x12\x19\n\x13\x41\x42I_VERSION_CURRENT\x10\x80\x80\x04\x62\x06proto3'
+  serialized_pb=b'\n#messages/tts_frontend_message.proto\x12\x1a\x63om.grammatek.tts_frontend\"d\n\x10NormalizeRequest\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12?\n\x06\x64omain\x18\x02 \x01(\x0e\x32/.com.grammatek.tts_frontend.NormalizationDomain\"/\n\x11NormalizeResponse\x12\x1a\n\x12normalized_content\x18\x01 \x01(\t\"\x82\x01\n\x1cTokenBasedNormalizedResponse\x12\x1a\n\x12normalized_content\x18\x01 \x01(\t\x12\x46\n\ntoken_info\x18\x02 \x03(\x0b\x32\x32.com.grammatek.tts_frontend.RawNormalizedTokenInfo\"w\n\x16RawNormalizedTokenInfo\x12\x16\n\x0eoriginal_token\x18\x01 \x01(\t\x12\x18\n\x10normalized_token\x18\x02 \x01(\t\x12\x16\n\x0eoriginal_index\x18\x03 \x01(\x05\x12\x13\n\x0bhas_changed\x18\x04 \x01(\x08\"i\n\x11PreprocessRequest\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12\x43\n\x0b\x64\x65scription\x18\x02 \x01(\x0b\x32..com.grammatek.tts_frontend.PhonemeDescription\"v\n\x14PreprocessedResponse\x12\x19\n\x11processed_content\x18\x01 \x01(\t\x12\x43\n\x0b\x64\x65scription\x18\x02 \x01(\x0b\x32..com.grammatek.tts_frontend.PhonemeDescription\"\xbb\x01\n\x12PhonemeDescription\x12>\n\x08\x61lphabet\x18\x01 \x01(\x0e\x32,.com.grammatek.tts_frontend.PhoneticAlphabet\x12\x39\n\x06\x66ormat\x18\x02 \x01(\x0e\x32).com.grammatek.tts_frontend.PhonemeFormat\x12\x13\n\x0bsyllabified\x18\x03 \x01(\x08\x12\x15\n\rstress_labels\x18\x04 \x01(\x08\"N\n\x12\x41\x62iVersionResponse\x12\x38\n\x07version\x18\x01 \x01(\x0e\x32\'.com.grammatek.tts_frontend.ABI_VERSION*\\\n\x13NormalizationDomain\x12\x17\n\x13NORM_DOMAIN_INVALID\x10\x00\x12\x15\n\x11NORM_DOMAIN_SPORT\x10\x01\x12\x15\n\x11NORM_DOMAIN_OTHER\x10\x02*i\n\x10PhoneticAlphabet\x12\x1d\n\x19PHONETIC_ALPHABET_INVALID\x10\x00\x12\x19\n\x15PHONETIC_ALPHABET_IPA\x10\x01\x12\x1b\n\x17PHONETIC_ALPHABET_SAMPA\x10\x02*H\n\rPhonemeFormat\x12\x13\n\x0fPHONEME_INVALID\x10\x00\x12\x0f\n\x0bPHONEME_CMU\x10\x01\x12\x11\n\rPHONEME_PLAIN\x10\x02*A\n\x0b\x41\x42I_VERSION\x12\x17\n\x13\x41\x42I_VERSION_INVALID\x10\x00\x12\x19\n\x13\x41\x42I_VERSION_CURRENT\x10\x80\x80\x04\x62\x06proto3'
 )
 
+_NORMALIZATIONDOMAIN = _descriptor.EnumDescriptor(
+  name='NormalizationDomain',
+  full_name='com.grammatek.tts_frontend.NormalizationDomain',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='NORM_DOMAIN_INVALID', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='NORM_DOMAIN_SPORT', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='NORM_DOMAIN_OTHER', index=2, number=2,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=969,
+  serialized_end=1061,
+)
+_sym_db.RegisterEnumDescriptor(_NORMALIZATIONDOMAIN)
+
+NormalizationDomain = enum_type_wrapper.EnumTypeWrapper(_NORMALIZATIONDOMAIN)
 _PHONETICALPHABET = _descriptor.EnumDescriptor(
   name='PhoneticAlphabet',
   full_name='com.grammatek.tts_frontend.PhoneticAlphabet',
@@ -48,8 +79,8 @@ _PHONETICALPHABET = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=904,
-  serialized_end=1009,
+  serialized_start=1063,
+  serialized_end=1168,
 )
 _sym_db.RegisterEnumDescriptor(_PHONETICALPHABET)
 
@@ -79,8 +110,8 @@ _PHONEMEFORMAT = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1011,
-  serialized_end=1083,
+  serialized_start=1170,
+  serialized_end=1242,
 )
 _sym_db.RegisterEnumDescriptor(_PHONEMEFORMAT)
 
@@ -105,12 +136,15 @@ _ABI_VERSION = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1085,
-  serialized_end=1150,
+  serialized_start=1244,
+  serialized_end=1309,
 )
 _sym_db.RegisterEnumDescriptor(_ABI_VERSION)
 
 ABI_VERSION = enum_type_wrapper.EnumTypeWrapper(_ABI_VERSION)
+NORM_DOMAIN_INVALID = 0
+NORM_DOMAIN_SPORT = 1
+NORM_DOMAIN_OTHER = 2
 PHONETIC_ALPHABET_INVALID = 0
 PHONETIC_ALPHABET_IPA = 1
 PHONETIC_ALPHABET_SAMPA = 2
@@ -137,6 +171,13 @@ _NORMALIZEREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='domain', full_name='com.grammatek.tts_frontend.NormalizeRequest.domain', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -150,7 +191,7 @@ _NORMALIZEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=67,
-  serialized_end=102,
+  serialized_end=167,
 )
 
 
@@ -181,8 +222,8 @@ _NORMALIZERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=104,
-  serialized_end=151,
+  serialized_start=169,
+  serialized_end=216,
 )
 
 
@@ -220,8 +261,8 @@ _TOKENBASEDNORMALIZEDRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=154,
-  serialized_end=284,
+  serialized_start=219,
+  serialized_end=349,
 )
 
 
@@ -273,8 +314,8 @@ _RAWNORMALIZEDTOKENINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=286,
-  serialized_end=405,
+  serialized_start=351,
+  serialized_end=470,
 )
 
 
@@ -312,8 +353,8 @@ _PREPROCESSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=407,
-  serialized_end=512,
+  serialized_start=472,
+  serialized_end=577,
 )
 
 
@@ -351,8 +392,8 @@ _PREPROCESSEDRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=514,
-  serialized_end=632,
+  serialized_start=579,
+  serialized_end=697,
 )
 
 
@@ -404,8 +445,8 @@ _PHONEMEDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=635,
-  serialized_end=822,
+  serialized_start=700,
+  serialized_end=887,
 )
 
 
@@ -436,10 +477,11 @@ _ABIVERSIONRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=824,
-  serialized_end=902,
+  serialized_start=889,
+  serialized_end=967,
 )
 
+_NORMALIZEREQUEST.fields_by_name['domain'].enum_type = _NORMALIZATIONDOMAIN
 _TOKENBASEDNORMALIZEDRESPONSE.fields_by_name['token_info'].message_type = _RAWNORMALIZEDTOKENINFO
 _PREPROCESSREQUEST.fields_by_name['description'].message_type = _PHONEMEDESCRIPTION
 _PREPROCESSEDRESPONSE.fields_by_name['description'].message_type = _PHONEMEDESCRIPTION
@@ -454,6 +496,7 @@ DESCRIPTOR.message_types_by_name['PreprocessRequest'] = _PREPROCESSREQUEST
 DESCRIPTOR.message_types_by_name['PreprocessedResponse'] = _PREPROCESSEDRESPONSE
 DESCRIPTOR.message_types_by_name['PhonemeDescription'] = _PHONEMEDESCRIPTION
 DESCRIPTOR.message_types_by_name['AbiVersionResponse'] = _ABIVERSIONRESPONSE
+DESCRIPTOR.enum_types_by_name['NormalizationDomain'] = _NORMALIZATIONDOMAIN
 DESCRIPTOR.enum_types_by_name['PhoneticAlphabet'] = _PHONETICALPHABET
 DESCRIPTOR.enum_types_by_name['PhonemeFormat'] = _PHONEMEFORMAT
 DESCRIPTOR.enum_types_by_name['ABI_VERSION'] = _ABI_VERSION

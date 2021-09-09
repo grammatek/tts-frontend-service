@@ -5,6 +5,8 @@ sys.path.append(dirname(__file__)+'/generated/')
 from concurrent import futures
 import logging
 import grpc
+
+from regina_normalizer.main import Normalizer
 from generated.messages import tts_frontend_message_pb2
 from generated.services import tts_frontend_service_pb2_grpc
 
@@ -14,12 +16,19 @@ class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
 
     def __init__(self):
         # init normalizer
+        self.normalizer = Normalizer()
         return
 
     def Normalize(self, request, context):
         """Normalize text for TTS, returns normalized text prepared for g2p
         """
         context.set_code(grpc.StatusCode.OK)
+        if request.domain == tts_frontend_message_pb2.NORM_DOMAIN_SPORT:
+            domain = 'sport'
+        else:
+            domain = ''
+        normalized = self.normalizer.normalize(request.content, domain)
+        return tts_frontend_message_pb2.NormalizeResponse(normalized_content=normalized)
 
     def TTSPreprocess(self, request, context):
         """Preprocess text for TTS, including conversion to X-SAMPA
