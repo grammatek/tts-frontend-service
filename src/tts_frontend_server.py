@@ -19,6 +19,25 @@ class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
         self.normalizer = Normalizer()
         return
 
+    def init_tokenbased_response(self, normalized_arr):
+        response = tts_frontend_message_pb2.TokenBasedNormalizedResponse()
+        for sentence in normalized_arr:
+            sentence_response = tts_frontend_message_pb2.TokenBasedNormalizedSentence()
+            norm_sent = ''
+            for ind, pair in enumerate(sentence):
+                info = tts_frontend_message_pb2.RawNormalizedTokenInfo()
+                info.original_token = pair[0]
+                info.normalized_token = pair[1]
+                info.original_index = ind
+                if info.original_token != info.normalized_token:
+                    info.has_changed = True
+                sentence_response.token_info.append(info)
+                norm_sent += info.normalized_token + ' '
+            sentence_response.normalized_sentence = norm_sent.strip()
+            response.sentence.append(sentence_response)
+
+        return response
+
     def Normalize(self, request, context):
         """Normalize text for TTS, returns normalized text prepared for g2p
         """
@@ -28,17 +47,34 @@ class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
         else:
             domain = ''
         normalized = self.normalizer.normalize(request.content, domain)
-        return tts_frontend_message_pb2.NormalizeResponse(normalized_content=normalized)
+        response = tts_frontend_message_pb2.NormalizeResponse()
+        for sentence in normalized:
+            response.normalized_sentence.append(sentence[0])
+
+        return response
+
+    def NormalizeTokenwise(self, request, context):
+        """Normalize text for TTS, returns normalized text prepared for g2p
+        """
+        context.set_code(grpc.StatusCode.OK)
+        if request.domain == tts_frontend_message_pb2.NORM_DOMAIN_SPORT:
+            domain = 'sport'
+        else:
+            domain = ''
+        normalized = self.normalizer.normalize_tokenwise(request.content, domain)
+        response = self.init_tokenbased_response(normalized)
+
+        return response
 
     def TTSPreprocess(self, request, context):
         """Preprocess text for TTS, including conversion to X-SAMPA
         """
-        context.set_code(grpc.StatusCode.OK)
+        context.set_code(grpc.StatusCode.NOT_IMPLEMENTED)
 
     def GetDefaultPhonemeDescription(self, request, context):
         """Default values for the phoneme description
         """
-        context.set_code(grpc.StatusCode.OK)
+        context.set_code(grpc.StatusCode.NOT_IMPLEMENTED)
 
     def GetVersion(self, request, context):
         context.set_code(grpc.StatusCode.OK)
