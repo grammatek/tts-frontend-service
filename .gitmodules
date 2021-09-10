@@ -2,5 +2,5 @@
 	path = proto
 	url = git@github.com:grammatek/tts-frontend-api.git
 [submodule "normalizer"]
-	path = normalizer
+	path = regina_normalizer
 	url = git@github.com:grammatek/regina_normalizer.git
