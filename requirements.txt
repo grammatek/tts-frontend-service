@@ -1,4 +1,4 @@
 grpcio-tools >= 1.40.0
 tokenizer >= 3.3.0
 git+https://github.com/cadia-lvl/POS.git@v3.0.0
-git+https://github.com/grammatek/regina_normalizer.git@detach-tagger
+regina_normalizer @ file:///src/regina_normalizer/
