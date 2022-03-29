@@ -6,26 +6,24 @@ from concurrent import futures
 import logging
 import grpc
 
-from regina_normalizer.main import Normalizer
-from generated.messages import tts_frontend_message_pb2
-from generated.services import tts_frontend_service_pb2_grpc
+from generated.messages import text_preprocessing_message_pb2
+from generated.services import text_preprocessing_service_pb2_grpc
 
 
-class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
+class TTSFrontendServicer(text_preprocessing_service_pb2_grpc.TextPreprocessingServicer):
     """Provides methods that implement functionality of tts frontend server."""
 
     def __init__(self):
-        # init normalizer
-        self.normalizer = Normalizer()
-        return
+        # init pipeline
+        pass
 
     def init_tokenbased_response(self, normalized_arr):
-        response = tts_frontend_message_pb2.TokenBasedNormalizedResponse()
+        response = text_preprocessing_message_pb2.NormalizedResponse()
         for sentence in normalized_arr:
-            sentence_response = tts_frontend_message_pb2.TokenBasedNormalizedSentence()
+            sentence_response = text_preprocessing_message_pb2.NormalizedSentence()
             norm_sent = ''
             for ind, pair in enumerate(sentence):
-                info = tts_frontend_message_pb2.RawNormalizedTokenInfo()
+                info = text_preprocessing_message_pb2.RawNormalizedTokenInfo()
                 info.original_token = pair[0]
                 info.normalized_token = pair[1]
                 info.original_index = ind
@@ -42,12 +40,12 @@ class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
         """Normalize text for TTS, returns normalized text prepared for g2p
         """
         context.set_code(grpc.StatusCode.OK)
-        if request.domain == tts_frontend_message_pb2.NORM_DOMAIN_SPORT:
+        if request.domain == text_preprocessing_message_pb2.NORM_DOMAIN_SPORT:
             domain = 'sport'
         else:
             domain = ''
         normalized = self.normalizer.normalize(request.content, domain)
-        response = tts_frontend_message_pb2.NormalizeResponse()
+        response = text_preprocessing_message_pb2.NormalizeResponse()
         for sentence in normalized:
             response.normalized_sentence.append(sentence[0])
 
@@ -57,7 +55,7 @@ class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
         """Normalize text for TTS, returns normalized text prepared for g2p
         """
         context.set_code(grpc.StatusCode.OK)
-        if request.domain == tts_frontend_message_pb2.NORM_DOMAIN_SPORT:
+        if request.domain == text_preprocessing_message_pb2.NORM_DOMAIN_SPORT:
             domain = 'sport'
         else:
             domain = ''
@@ -78,12 +76,12 @@ class TTSFrontendServicer(tts_frontend_service_pb2_grpc.TTSFrontendServicer):
 
     def GetVersion(self, request, context):
         context.set_code(grpc.StatusCode.OK)
-        return tts_frontend_message_pb2.AbiVersionResponse(version=tts_frontend_message_pb2.ABI_VERSION.ABI_VERSION_CURRENT)
+        return text_preprocessing_message_pb2.AbiVersionResponse(version=text_preprocessing_message_pb2.ABI_VERSION.ABI_VERSION_CURRENT)
 
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    tts_frontend_service_pb2_grpc.add_TTSFrontendServicer_to_server(TTSFrontendServicer(), server)
+    text_preprocessing_service_pb2_grpc.add_TTSFrontendServicer_to_server(TTSFrontendServicer(), server)
     server.add_insecure_port('[::]:8080')
     server.start()
     server.wait_for_termination()
