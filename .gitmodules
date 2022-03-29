@@ -1,6 +1,0 @@
-[submodule "proto"]
-	path = proto
-	url = git@github.com:grammatek/tts-frontend-api.git
-[submodule "normalizer"]
-	path = src/regina_normalizer
-	url = git@github.com:grammatek/regina_normalizer.git
