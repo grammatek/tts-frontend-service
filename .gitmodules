@@ -1,3 +1,6 @@
 [submodule "tts-frontend-proto"]
 	path = tts-frontend-proto
 	url = git@github.com:grammatek/tts-frontend-proto.git
+[submodule "src/tts-frontend"]
+	path = src/tts-frontend
+	url = git@github.com:grammatek/tts-frontend.git
