@@ -19,6 +19,7 @@ def get_clean_text(stub, text, html=False):
     message = msg_pb2.TextCleanRequest(content=text, parse_html=html)
     response = stub.Clean(message)
     print(response)
+    print(response.processed_content)
 
 
 def get_normalized_text(stub, text):
@@ -26,12 +27,15 @@ def get_normalized_text(stub, text):
     message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     response = stub.Normalize(message)
     print(response)
+    print(response.processed_content)
 
 def get_transcribed_text(stub, text):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
-    message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain)
+    phoneme_descr = msg_pb2.PhonemeDescription(syllabified=True, stress_labels=True)
+    message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain, description=phoneme_descr)
     response = stub.Preprocess(message)
     print(response)
+    print(response.processed_content)
 
 
 def run():
@@ -44,7 +48,7 @@ def run():
         print("-------------- Normalize --------------")
         get_normalized_text(stub, "það voru 55 km eftir")
         print("-------------- Transcribe --------------")
-        get_transcribed_text(stub, "það voru 55 km eftir")
+        get_transcribed_text(stub, "það voru 55 km eftir, sögðu allir nema 1")
 
 
 if __name__=='__main__':

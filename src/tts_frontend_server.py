@@ -73,6 +73,7 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
                 clean_token = self.init_clean_token(token)
                 tok = msg.CleanTokenList(cleaned=clean_token)
 
+            response.processed_content += token.name + ' '
             response.tokens.append(tok)
 
         return response
@@ -96,6 +97,7 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
                 norm_token = self.init_norm_token(token)
                 tok = msg.NormalizedTokenList(normalized=norm_token)
 
+            response.processed_content += token.name + ' '
             response.tokens.append(tok)
 
         return response
@@ -108,6 +110,8 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
             domain = 'sport'
         else:
             domain = ''
+
+        self.manager.set_g2p_syllab_stress(request.description.syllabified)
         transcribed_res = self.manager.transcribe(request.content, domain)
         response = msg.PreprocessedResponse()
         for token in transcribed_res:
@@ -117,6 +121,8 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
             else:
                 transcribed_token = self.init_transcr_token(token)
                 tok = msg.TranscribedTokenList(transcribed=transcribed_token)
+
+            response.processed_content += token.name + ' '
 
             response.tokens.append(tok)
 
