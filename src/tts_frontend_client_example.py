@@ -14,6 +14,13 @@ def get_version(stub):
     response = stub.GetVersion(empty_pb2.Empty())
     print(response)
 
+
+def get_clean_text(stub, text, html=False):
+    message = msg_pb2.TextCleanRequest(content=text, parse_html=html)
+    response = stub.Clean(message)
+    print(response)
+
+
 def get_normalized_text(stub, text):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
     message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
@@ -26,6 +33,8 @@ def run():
         stub = text_preprocessing_service_pb2_grpc.TextPreprocessingStub(channel)
         print("-------------- GetVersion --------------")
         get_version(stub)
+        print("-------------- Clean --------------")
+        get_clean_text(stub, "en π námundast í 3.14")
         print("-------------- Normalize --------------")
         get_normalized_text(stub, "það voru 55 km eftir")
 

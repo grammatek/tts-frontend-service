@@ -1,7 +1,7 @@
 import sys
 from os.path import dirname
 
-from manager.tokens import TagToken, NormalizedToken
+from manager.tokens import TagToken, CleanToken, NormalizedToken
 
 sys.path.append(dirname(__file__)+'/generated/')
 
@@ -22,12 +22,19 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
         # init pipeline
         self.manager = Manager()
 
+    def init_clean_token(self, token: CleanToken) -> msg.CleanToken:
+        """
+
+        """
+        orig = token.original_token
+        embedded_orig = msg.Token(name=orig.name, index=orig.token_index, span_from=orig.start, span_to=orig.end)
+        clean_token = msg.CleanToken(original_token=embedded_orig, name=token.name, index=token.token_index)
+
+        return clean_token
+
     def init_norm_token(self, token: NormalizedToken) -> msg.NormalizedToken:
         """
-        CleanToken clean_token = 1;
-  string name = 2; // the normalized version of the token
-  int32 index = 3;
-  NormalizationDomain domain = 4;
+
         """
         clean = token.clean_token
         orig = clean.original_token
@@ -36,6 +43,27 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
         norm_token = msg.NormalizedToken(clean_token=embedded_clean, name=token.name, index=token.token_index)
 
         return norm_token
+
+    def Clean(self, request: msg.TextCleanRequest, context) -> msg.TextCleanResponse:
+        """Clean text, returns clean text without non-valid chars or symbols.
+        """
+        context.set_code(grpc.StatusCode.OK)
+
+        cleanRes = self.manager.clean(request.content)
+        print('res from manager: ' + str(cleanRes))
+        response = msg.TextCleanResponse()
+        for token in cleanRes:
+
+            if isinstance(token, TagToken):
+                tagTok = msg.TagToken(name=token.name, index=token.token_index)
+                tok = msg.CleanTokenList(tag=tagTok)
+            else:
+                clean_token = self.init_clean_token(token)
+                tok = msg.CleanTokenList(cleaned=clean_token)
+
+            response.tokens.append(tok)
+
+        return response
 
     def Normalize(self, request: msg.NormalizeRequest, context) -> msg.NormalizedResponse:
         """Normalize text for TTS, returns normalized text prepared for g2p
