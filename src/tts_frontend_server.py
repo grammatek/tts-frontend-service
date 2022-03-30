@@ -29,8 +29,11 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
   int32 index = 3;
   NormalizationDomain domain = 4;
         """
-        
-        norm_token = msg.NormalizedToken(name=token.name, index=token.token_index)
+        clean = token.clean_token
+        orig = clean.original_token
+        embedded_orig = msg.Token(name=orig.name, index=orig.token_index, span_from=orig.start, span_to=orig.end)
+        embedded_clean = msg.CleanToken(original_token=embedded_orig, name=clean.name, index=clean.token_index)
+        norm_token = msg.NormalizedToken(clean_token=embedded_clean, name=token.name, index=token.token_index)
 
         return norm_token
 

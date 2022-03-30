@@ -14,9 +14,9 @@ def get_version(stub):
     response = stub.GetVersion(empty_pb2.Empty())
     print(response)
 
-def get_normalized_text(stub):
+def get_normalized_text(stub, text):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
-    message = msg_pb2.NormalizeRequest(content='voru 55 km eftir', domain=norm_domain)
+    message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     response = stub.Normalize(message)
     print(response)
 
@@ -27,7 +27,7 @@ def run():
         print("-------------- GetVersion --------------")
         get_version(stub)
         print("-------------- Normalize --------------")
-        get_normalized_text(stub)
+        get_normalized_text(stub, "það voru 55 km eftir")
 
 
 if __name__=='__main__':
