@@ -8,8 +8,6 @@ RUN python3 -m ensurepip
 RUN pip3 install --no-cache --upgrade pip setuptools
 RUN apt-get update && apt-get install -y git
 
-ADD /src/regina_normalizer /src/regina_normalizer
-
 WORKDIR $TTS_FRONTEND
 
 COPY requirements.txt requirements.txt

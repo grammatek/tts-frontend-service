@@ -1,4 +1,2 @@
 grpcio-tools >= 1.40.0
-tokenizer >= 3.3.0
-git+https://github.com/cadia-lvl/POS.git@v3.0.0
-regina_normalizer @ file:///src/regina_normalizer/
+tts-textprocessing @ git+https://github.com/grammatek/tts-frontend
