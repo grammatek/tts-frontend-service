@@ -1,7 +1,7 @@
 import sys
 from os.path import dirname
 
-from manager.tokens import TagToken, CleanToken, NormalizedToken
+from manager.tokens import TagToken, CleanToken, NormalizedToken, TranscribedToken
 
 sys.path.append(dirname(__file__)+'/generated/')
 
@@ -44,13 +44,25 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
 
         return norm_token
 
+    def init_transcr_token(self, token: TranscribedToken) -> msg.TranscribedToken:
+        """
+
+        """
+        norm = token.normalized
+        clean = norm.clean_token
+        orig = clean.original_token
+        embedded_orig = msg.Token(name=orig.name, index=orig.token_index, span_from=orig.start, span_to=orig.end)
+        embedded_clean = msg.CleanToken(original_token=embedded_orig, name=clean.name, index=clean.token_index)
+        embedded_norm = msg.NormalizedToken(clean_token=embedded_clean, name=norm.name)
+        transcribed = msg.TranscribedToken(normalized_token=embedded_norm, name=token.name)
+        return transcribed
+
     def Clean(self, request: msg.TextCleanRequest, context) -> msg.TextCleanResponse:
         """Clean text, returns clean text without non-valid chars or symbols.
         """
         context.set_code(grpc.StatusCode.OK)
 
         cleanRes = self.manager.clean(request.content)
-        print('res from manager: ' + str(cleanRes))
         response = msg.TextCleanResponse()
         for token in cleanRes:
 
@@ -88,10 +100,27 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
 
         return response
 
-    def TTSPreprocess(self, request, context):
+    def Preprocess(self, request: msg.PreprocessRequest, context) -> msg.PreprocessedResponse:
         """Preprocess text for TTS, including conversion to X-SAMPA
         """
-        context.set_code(grpc.StatusCode.NOT_IMPLEMENTED)
+        context.set_code(grpc.StatusCode.OK)
+        if request.domain == msg.NORM_DOMAIN_SPORT:
+            domain = 'sport'
+        else:
+            domain = ''
+        transcribed_res = self.manager.transcribe(request.content, domain)
+        response = msg.PreprocessedResponse()
+        for token in transcribed_res:
+            if isinstance(token, TagToken):
+                tagTok = msg.TagToken(name=token.name, index=token.token_index)
+                tok = msg.TranscribedTokenList(tag=tagTok)
+            else:
+                transcribed_token = self.init_transcr_token(token)
+                tok = msg.TranscribedTokenList(transcribed=transcribed_token)
+
+            response.tokens.append(tok)
+
+        return response
 
     def GetDefaultPhonemeDescription(self, request, context):
         """Default values for the phoneme description

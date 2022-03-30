@@ -27,6 +27,12 @@ def get_normalized_text(stub, text):
     response = stub.Normalize(message)
     print(response)
 
+def get_transcribed_text(stub, text):
+    norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
+    message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain)
+    response = stub.Preprocess(message)
+    print(response)
+
 
 def run():
     with grpc.insecure_channel('localhost:8080') as channel:
@@ -37,6 +43,8 @@ def run():
         get_clean_text(stub, "en π námundast í 3.14")
         print("-------------- Normalize --------------")
         get_normalized_text(stub, "það voru 55 km eftir")
+        print("-------------- Transcribe --------------")
+        get_transcribed_text(stub, "það voru 55 km eftir")
 
 
 if __name__=='__main__':
