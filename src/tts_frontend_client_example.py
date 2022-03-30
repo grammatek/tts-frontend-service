@@ -20,12 +20,6 @@ def get_normalized_text(stub):
     response = stub.Normalize(message)
     print(response)
 
-def get_tokenwise_normalized_text(stub):
-    norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
-    message = msg_pb2.NormalizeRequest(content='voru 55 km eftir. Enginn gat farið meira en 2 m.', domain=norm_domain)
-    response = stub.NormalizeTokenwise(message)
-    print(response)
-
 
 def run():
     with grpc.insecure_channel('localhost:8080') as channel:

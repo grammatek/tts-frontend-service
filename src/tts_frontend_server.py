@@ -1,7 +1,7 @@
 import sys
 from os.path import dirname
 
-import manager.tokens
+from manager.tokens import TagToken, NormalizedToken
 
 sys.path.append(dirname(__file__)+'/generated/')
 
@@ -22,6 +22,18 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
         # init pipeline
         self.manager = Manager()
 
+    def init_norm_token(self, token: NormalizedToken) -> msg.NormalizedToken:
+        """
+        CleanToken clean_token = 1;
+  string name = 2; // the normalized version of the token
+  int32 index = 3;
+  NormalizationDomain domain = 4;
+        """
+        
+        norm_token = msg.NormalizedToken(name=token.name, index=token.token_index)
+
+        return norm_token
+
     def Normalize(self, request: msg.NormalizeRequest, context) -> msg.NormalizedResponse:
         """Normalize text for TTS, returns normalized text prepared for g2p
         """
@@ -30,10 +42,18 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
             domain = 'sport'
         else:
             domain = ''
-        normalized = self.manager.normalize(request.content, domain)
+        normalizedRes = self.manager.normalize(request.content, domain)
         response = msg.NormalizedResponse()
-        for token in normalized:
-            response.tokens.append(token)
+        for token in normalizedRes:
+
+            if isinstance(token, TagToken):
+                tagTok = msg.TagToken(name=token.name, index=token.token_index)
+                tok = msg.NormalizedTokenList(tag=tagTok)
+            else:
+                norm_token = self.init_norm_token(token)
+                tok = msg.NormalizedTokenList(normalized=norm_token)
+
+            response.tokens.append(tok)
 
         return response
 
