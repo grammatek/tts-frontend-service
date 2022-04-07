@@ -4,5 +4,13 @@
 
 # Make sure to have installed requirements before running this script
 
-python3 -m grpc_tools.protoc -I./tts-frontend-proto/ --python_out=src/generated/ --grpc_python_out=src/generated/ tts-frontend-proto/services/text_preprocessing_service.proto
-python3 -m grpc_tools.protoc -I./tts-frontend-proto/ --python_out=src/generated/ --grpc_python_out=src/generated/ tts-frontend-proto/messages/text_preprocessing_message.proto
+# clone the google apis
+GOOGLEAPIS_DIR=googleapis/
+if [ ! -d ${GOOGLEAPIS_DIR} ]; then
+  git clone --depth 1 https://github.com/googleapis/googleapis ${GOOGLEAPIS_DIR}
+fi
+
+python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out=src/generated/ \
+        --grpc_python_out=src/generated/ tts-frontend-proto/services/text_preprocessing_service.proto
+python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out=src/generated/ \
+        --grpc_python_out=src/generated/ tts-frontend-proto/messages/text_preprocessing_message.proto
