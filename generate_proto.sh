@@ -11,6 +11,6 @@ if [ ! -d ${GOOGLEAPIS_DIR} ]; then
 fi
 
 python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out=src/generated/ \
-        --grpc_python_out=src/generated/ tts-frontend-proto/services/text_preprocessing_service.proto
+        --grpc_python_out=src/generated/ tts-frontend-proto/services/preprocessing_service.proto
 python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out=src/generated/ \
-        --grpc_python_out=src/generated/ tts-frontend-proto/messages/text_preprocessing_message.proto
+        --grpc_python_out=src/generated/ tts-frontend-proto/messages/preprocessing_message.proto
