@@ -97,8 +97,11 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
                 norm_token = self.init_norm_token(token)
                 tok = msg.NormalizedTokenList(normalized=norm_token)
 
-            response.processed_content += token.name + ' '
             response.tokens.append(tok)
+            # don't add a tagToken's name to processed content string if the user doesn't want tags in the result string
+            if isinstance(token, TagToken) and msg.no_tag_tokens_in_content:
+                continue
+            response.processed_content += token.name + ' '
 
         return response
 
@@ -111,6 +114,9 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
         else:
             domain = ''
 
+        # add user dictionary, if present
+
+        # add g2p settings, if present
         self.manager.set_g2p_syllab_stress(request.description.syllabified)
         transcribed_res = self.manager.transcribe(request.content, domain)
         response = msg.PreprocessedResponse()
@@ -122,9 +128,13 @@ class TTSFrontendServicer(service.TextPreprocessingServicer):
                 transcribed_token = self.init_transcr_token(token)
                 tok = msg.TranscribedTokenList(transcribed=transcribed_token)
 
-            response.processed_content += token.name + ' '
-
             response.tokens.append(tok)
+
+            # don't add a tagToken's name to processed content string if the user doesn't want tags in the result string
+            if isinstance(token, TagToken) and msg.no_tag_tokens_in_content:
+                continue
+
+            response.processed_content += token.name + ' '
 
         return response
 
