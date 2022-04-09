@@ -155,7 +155,10 @@ class TTSFrontendServicer(service.PreprocessingServicer):
             if isinstance(token, TagToken) and request.no_tag_tokens_in_content:
                 continue
 
-            response.processed_content += token.name + ' '
+            if request.description.word_separator:
+                response.processed_content += token.name + f' {request.description.word_separator} '
+            else:
+                response.processed_content += token.name + ' '
 
         return response
 

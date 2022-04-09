@@ -30,11 +30,17 @@ def get_normalized_text(stub, text):
     print(response.processed_content)
 
 
-def get_transcribed_text(stub, text, custom_dict={}, word_sep='', syllabified='', stress_labels=False):
+def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STANDARD, word_sep='', syllabified='', stress_labels=False,
+                         no_tag_tokens_in_content=False):
+    """
+    Compose a PreprocessRequest from the parameters and send to the Preprocess service.
+    TODO: Dialect param is not acutally available yet, only the DIALECT_STANDARD. Add DIALECT_NORTH to implementation
+    """
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
-    phoneme_descr = msg_pb2.PhonemeDescription(word_separator=word_sep, syllabified=syllabified, stress_labels=stress_labels)
+    phoneme_descr = msg_pb2.PhonemeDescription(dialect=dialect, word_separator=word_sep, syllabified=syllabified,
+                                               stress_labels=stress_labels)
     message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain, pronunciation_dict=custom_dict,
-                                        description=phoneme_descr)
+                                        description=phoneme_descr, no_tag_tokens_in_content=no_tag_tokens_in_content)
     response = stub.Preprocess(message)
     print(response)
     print(response.processed_content)
@@ -61,14 +67,15 @@ def run():
         stub = preprocessing_service_pb2_grpc.PreprocessingStub(channel)
         print("-------------- GetVersion --------------")
         get_version(stub)
-        #print("-------------- Clean --------------")
-        #get_clean_text(stub, "en π námundast í 3.14")
-        #print("-------------- Clean HTML --------------")
-        #get_clean_text(stub, get_html_string(), html=True)
-        #print("-------------- Normalize --------------")
-        #get_normalized_text(stub, "það voru 55 km eftir")
+        print("-------------- Clean --------------")
+        get_clean_text(stub, "en π námundast í 3.14")
+        print("-------------- Clean HTML --------------")
+        get_clean_text(stub, get_html_string(), html=True)
+        print("-------------- Normalize --------------")
+        get_normalized_text(stub, "það voru 55 km eftir")
         print("-------------- Transcribe --------------")
-        get_transcribed_text(stub, "það voru 55 km eftir, sögðu allir nema 1", custom_dict=get_custom_dict())
+        get_transcribed_text(stub, "það voru 55 km eftir, sögðu allir nema 1", custom_dict=get_custom_dict(),
+                             syllabified='.', word_sep='.', stress_labels=True, no_tag_tokens_in_content=True)
 
 
 if __name__=='__main__':
