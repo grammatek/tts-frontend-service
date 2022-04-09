@@ -29,10 +29,12 @@ def get_normalized_text(stub, text):
     print(response)
     print(response.processed_content)
 
-def get_transcribed_text(stub, text):
+
+def get_transcribed_text(stub, text, custom_dict={}, word_sep='', syllabified='', stress_labels=False):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
-    phoneme_descr = msg_pb2.PhonemeDescription(syllabified='.', stress_labels=True)
-    message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain, description=phoneme_descr)
+    phoneme_descr = msg_pb2.PhonemeDescription(word_separator=word_sep, syllabified=syllabified, stress_labels=stress_labels)
+    message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain, pronunciation_dict=custom_dict,
+                                        description=phoneme_descr)
     response = stub.Preprocess(message)
     print(response)
     print(response.processed_content)
@@ -50,19 +52,23 @@ def get_html_string():
                '<span id="qitl_0597" class="sentence"> Sigrún Gunnarsdóttir hefur íslenskað skilgreiningu hugtaksins ' \
                'um tilfinningu fyrir samhengi í lífinu á eftirfarandi hátt: </span></p>'
 
+
+def get_custom_dict() -> dict:
+    return {'eftir': 'E p t I r', 'sögðu': 's 9 k D Y'}
+
 def run():
     with grpc.insecure_channel('localhost:8080') as channel:
         stub = preprocessing_service_pb2_grpc.PreprocessingStub(channel)
         print("-------------- GetVersion --------------")
         get_version(stub)
-        print("-------------- Clean --------------")
-        get_clean_text(stub, "en π námundast í 3.14")
-        print("-------------- Clean HTML --------------")
-        get_clean_text(stub, get_html_string(), html=True)
+        #print("-------------- Clean --------------")
+        #get_clean_text(stub, "en π námundast í 3.14")
+        #print("-------------- Clean HTML --------------")
+        #get_clean_text(stub, get_html_string(), html=True)
         #print("-------------- Normalize --------------")
         #get_normalized_text(stub, "það voru 55 km eftir")
-        #print("-------------- Transcribe --------------")
-        #get_transcribed_text(stub, "það voru 55 km eftir, sögðu allir nema 1")
+        print("-------------- Transcribe --------------")
+        get_transcribed_text(stub, "það voru 55 km eftir, sögðu allir nema 1", custom_dict=get_custom_dict())
 
 
 if __name__=='__main__':

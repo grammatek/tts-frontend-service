@@ -133,9 +133,12 @@ class TTSFrontendServicer(service.PreprocessingServicer):
             domain = ''
 
         # add user dictionary, if present
-
+        self.manager.set_g2p_custom_dict(request.pronunciation_dict)
         # add g2p settings, if present
         self.manager.set_g2p_syllab_symbol(request.description.syllabified)
+        self.manager.set_g2p_word_separator(request.description.word_separator)
+        self.manager.set_g2p_stress(request.description.stress_labels)
+        # process the request
         transcribed_res = self.manager.transcribe(request.content, domain)
         response = msg.PreprocessedResponse()
         for token in transcribed_res:
