@@ -14,3 +14,6 @@ python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out
         --grpc_python_out=src/generated/ tts-frontend-proto/services/preprocessing_service.proto
 python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out=src/generated/ \
         --grpc_python_out=src/generated/ tts-frontend-proto/messages/preprocessing_message.proto
+# Needed as dependency for service reflection
+python3 -m grpc_tools.protoc -I./googleapis -I./tts-frontend-proto/ --python_out=src/generated/ \
+        --grpc_python_out=src/generated/ ./googleapis/google/api/annotations.proto ./googleapis/google/api/http.proto
