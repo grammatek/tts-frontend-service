@@ -1,19 +1,20 @@
 import sys
 from os.path import dirname
-
-from manager.tokens import TagToken, CleanToken, NormalizedToken, TranscribedToken
-
-sys.path.append(dirname(__file__)+'/generated/')
-
 from concurrent import futures
 import logging
+
+from manager.tokens import TagToken, CleanToken, NormalizedToken, TranscribedToken
+from manager.textprocessing_manager import Manager
+
+sys.path.append(dirname(__file__)+'/generated/')
+sys.path.append(dirname(__file__)+'/../googleapis/')
+
 import grpc
-from google.protobuf import empty_pb2
+from grpc_reflection.v1alpha import reflection
 
 from generated.messages import preprocessing_message_pb2 as msg
+from generated.services import preprocessing_service_pb2
 from generated.services import preprocessing_service_pb2_grpc as service
-
-from manager.textprocessing_manager import Manager
 
 
 class TTSFrontendServicer(service.PreprocessingServicer):
@@ -174,6 +175,11 @@ class TTSFrontendServicer(service.PreprocessingServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     service.add_PreprocessingServicer_to_server(TTSFrontendServicer(), server)
+    SERVICE_NAMES = (
+        preprocessing_service_pb2.DESCRIPTOR.services_by_name['Preprocessing'].full_name,
+        reflection.SERVICE_NAME,
+    )
+    reflection.enable_server_reflection(SERVICE_NAMES, server)
     server.add_insecure_port('[::]:8080')
     server.start()
     server.wait_for_termination()
