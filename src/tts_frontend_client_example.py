@@ -12,22 +12,20 @@ from generated.messages import preprocessing_message_pb2 as msg_pb2
 
 def get_version(stub):
     response = stub.GetVersion(empty_pb2.Empty())
-    print(response)
+    return response
 
 
 def get_clean_text(stub, text, html=False):
     message = msg_pb2.TextCleanRequest(content=text, parse_html=html)
     response = stub.Clean(message)
-    print(response)
-    print(response.processed_content)
+    return response
 
 
 def get_normalized_text(stub, text):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
     message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     response = stub.Normalize(message)
-    print(response)
-    print(response.processed_content)
+    return response
 
 
 def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STANDARD, word_sep='', syllabified='', stress_labels=False,
@@ -42,8 +40,7 @@ def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STA
     message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain, pronunciation_dict=custom_dict,
                                         description=phoneme_descr, no_tag_tokens_in_content=no_tag_tokens_in_content)
     response = stub.Preprocess(message)
-    print(response)
-    print(response.processed_content)
+    return response
 
 
 def get_html_string():
@@ -70,12 +67,14 @@ def run():
         print("-------------- Clean --------------")
         get_clean_text(stub, "en π námundast í 3.14")
         print("-------------- Clean HTML --------------")
-        get_clean_text(stub, get_html_string(), html=True)
+        html_parsed_response = get_clean_text(stub, get_html_string(), html=True)
+        print(html_parsed_response.processed_content)
         print("-------------- Normalize --------------")
-        get_normalized_text(stub, "það voru 55 km eftir")
+        #get_normalized_text(stub, "það voru 55 km eftir")
         print("-------------- Transcribe --------------")
-        get_transcribed_text(stub, "það voru 55 km eftir, sögðu allir nema 1", custom_dict=get_custom_dict(),
+        transcribed_response = get_transcribed_text(stub, html_parsed_response.processed_content, custom_dict=get_custom_dict(),
                              syllabified='.', word_sep='.', stress_labels=True, no_tag_tokens_in_content=True)
+        print(transcribed_response.processed_content)
 
 
 if __name__=='__main__':

@@ -1,6 +1,7 @@
 import sys
 from os.path import dirname
 from concurrent import futures
+from typing import Union
 import logging
 
 from manager.tokens import TagToken, CleanToken, NormalizedToken, TranscribedToken
@@ -16,10 +17,13 @@ from generated.messages import preprocessing_message_pb2 as msg
 from generated.services import preprocessing_service_pb2
 from generated.services import preprocessing_service_pb2_grpc as service
 
+#TODO: create an accessor in tts-frontend to ensure sentence split tag are identical
+SENTENCE_SPLIT = '<sentence>'
 
 class TTSFrontendServicer(service.PreprocessingServicer):
     """Provides methods that implement functionality of a TTS frontend pipeline.
     For example usage see `tts_frontend_client_example.py` """
+
 
     def __init__(self):
         # init pipeline
@@ -67,6 +71,17 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         transcribed = msg.TranscribedToken(normalized_token=embedded_norm, name=token.name)
         return transcribed
 
+    @staticmethod
+    def add_content(name: str, request: Union[msg.TextCleanRequest, msg.NormalizeRequest, msg.PreprocessRequest]) -> str:
+        """Compose the string to add to a content string, using word_separator if given. Return the string."""
+        result_str = ''
+        if hasattr(request, 'description'):
+            if request.description.word_separator:
+                result_str = name + f' {request.description.word_separator} '
+        if not result_str:
+            result_str = name + ' '
+        return result_str
+
     def Clean(self, request: msg.TextCleanRequest, context) -> msg.TextCleanResponse:
         """Clean text, returns clean text without non-valid chars or symbols.
         Status: the only parameter reachable form here is the parse_html, i.e. if request.parse_html == True
@@ -99,35 +114,43 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         'tvö til eitt' as in the default domain setting.
         """
         context.set_code(grpc.StatusCode.OK)
+        # TODO: add domain param in manager methods
         if request.domain == msg.NORM_DOMAIN_SPORT:
             domain = 'sport'
         else:
             domain = ''
-        normalized_result = self.manager.normalize(request.content, domain)
+        normalized_result = self.manager.normalize(request.content, split_sent=True)
         response = msg.NormalizedResponse()
+        curr_sent = ''
         for token in normalized_result:
-
             if isinstance(token, TagToken):
                 tag_token = msg.TagToken(name=token.name, index=token.token_index)
                 tok = msg.NormalizedTokenList(tag=tag_token)
+                if token.name == SENTENCE_SPLIT:
+                    response.processed_content.append(curr_sent.strip())
+                    curr_sent = ''
+                elif not request.no_tag_tokens_in_content:
+                    curr_sent += self.add_content(token.name, request)
             else:
                 norm_token = self.init_norm_token(token)
                 tok = msg.NormalizedTokenList(normalized=norm_token)
 
             response.tokens.append(tok)
-            # don't add a tagToken's name to processed content string if the user doesn't want tags in the result string
-            if isinstance(token, TagToken) and request.no_tag_tokens_in_content:
-                continue
-            response.processed_content += token.name + ' '
+            curr_sent += self.add_content(token.name, request)
+
+        if curr_sent:
+            response.processed_content.append(curr_sent)
 
         return response
 
-    def Preprocess(self, request: msg.PreprocessRequest, context) -> msg.PreprocessedResponse:
+    def Preprocess(self, request: msg.PreprocessRequest, context, split_sent=True, html=False) -> msg.PreprocessedResponse:
         """Preprocess text for TTS, including conversion to X-SAMPA. Same settings for cleaning and normalizing
         apply as described in Clean() and Normalize(), and additionally the following parameters can be
         set:
+        TODO: refactor and extract methods
         """
         context.set_code(grpc.StatusCode.OK)
+        #TODO: add domain param in manager methods
         if request.domain == msg.NORM_DOMAIN_SPORT:
             domain = 'sport'
         else:
@@ -140,26 +163,29 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         self.manager.set_g2p_word_separator(request.description.word_separator)
         self.manager.set_g2p_stress(request.description.stress_labels)
         # process the request
-        transcribed_res = self.manager.transcribe(request.content, domain)
+        transcribed_res = self.manager.transcribe(request.content, html)
         response = msg.PreprocessedResponse()
+        # a single response sentence
+        curr_sent = ''
+        # Assemble the response from the transcribed_res, both the response token list as well as the
+        # response processed content (the list of sentence strings)
         for token in transcribed_res:
             if isinstance(token, TagToken):
-                tagTok = msg.TagToken(name=token.name, index=token.token_index)
-                tok = msg.TranscribedTokenList(tag=tagTok)
+                tag_tok = msg.TagToken(name=token.name, index=token.token_index)
+                tok = msg.TranscribedTokenList(tag=tag_tok)
+                if token.name == SENTENCE_SPLIT:
+                    response.processed_content.append(curr_sent.strip())
+                    curr_sent = ''
+                elif not request.no_tag_tokens_in_content:
+                    curr_sent += self.add_content(token.name, request)
             else:
                 transcribed_token = self.init_transcr_token(token)
                 tok = msg.TranscribedTokenList(transcribed=transcribed_token)
-
+                curr_sent += self.add_content(token.name, request)
             response.tokens.append(tok)
 
-            # don't add a tagToken's name to processed content string if the user doesn't want tags in the result string
-            if isinstance(token, TagToken) and request.no_tag_tokens_in_content:
-                continue
-
-            if request.description.word_separator:
-                response.processed_content += token.name + f' {request.description.word_separator} '
-            else:
-                response.processed_content += token.name + ' '
+        if curr_sent:
+            response.processed_content.append(curr_sent)
 
         return response
 
@@ -170,6 +196,7 @@ class TTSFrontendServicer(service.PreprocessingServicer):
     def GetVersion(self, request, context):
         context.set_code(grpc.StatusCode.OK)
         return msg.AbiVersionResponse(version=msg.ABI_VERSION.ABI_VERSION_CURRENT)
+
 
 
 def serve():
