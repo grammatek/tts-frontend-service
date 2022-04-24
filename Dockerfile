@@ -39,8 +39,6 @@ RUN curl -L https://github.com/grammatek/tts-frontend-proto/archive/bc6b4a3c8abd
 
 RUN mkdir -p $TTS_FRONTEND/src/generated/
 
-COPY googleapis/ $TTS_FRONTEND/googleapis
-
 COPY . $TTS_FRONTEND
 RUN python3 -m grpc_tools.protoc -I./googleapis -I. --python_out=$TTS_FRONTEND/src/generated/ --grpc_python_out=$TTS_FRONTEND/src/generated/ services/preprocessing_service.proto
 RUN python3 -m grpc_tools.protoc -I./googleapis -I. --python_out=$TTS_FRONTEND/src/generated/ --grpc_python_out=$TTS_FRONTEND/src/generated/ messages/preprocessing_message.proto
