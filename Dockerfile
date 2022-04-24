@@ -15,7 +15,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 
 RUN apt-get update -yqq && \
-    apt-get install -y curl
+    apt-get install -y curl git
 
 # Install OpenJDK-11
 RUN apt-get update && \
@@ -28,6 +28,9 @@ RUN apt-get update && \
 # Setup JAVA_HOME
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
 RUN export JAVA_HOME
+
+ENV GOOGLEAPIS_DIR=/app/googleapis
+RUN git clone --depth 1 https://github.com/googleapis/googleapis ${GOOGLEAPIS_DIR}
 
 RUN curl -L https://github.com/grammatek/tts-frontend-proto/archive/bc6b4a3c8abd96f8ba65db94118a676016a4a7ea.tar.gz | tar zxvf - \
     && mv tts-frontend-proto-bc6b4a3c8abd96f8ba65db94118a676016a4a7ea/messages $TTS_FRONTEND/ \
