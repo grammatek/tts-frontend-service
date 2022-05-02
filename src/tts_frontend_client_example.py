@@ -1,5 +1,6 @@
 import sys
 from os.path import dirname
+from typing import List, Tuple
 
 sys.path.append(dirname(__file__)+'/generated/')
 
@@ -25,7 +26,30 @@ def get_normalized_text(stub, text):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
     message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     response = stub.Normalize(message)
-    return response
+
+    sentences_with_pairs: List[List[Tuple[str, str]]] = []
+    curr_sent = []
+    for norm_token in response.tokens:
+        if norm_token.HasField("normalized"):
+            print("normalized: " + norm_token.normalized.name)
+        if norm_token.HasField("tag"):
+            print("tag: " + norm_token.tag.name)
+
+        if norm_token.HasField("tag"):
+            if norm_token.tag.name == '<sentence>':
+                sentences_with_pairs.append(curr_sent)
+                curr_sent = []
+            else:
+                # this is a tag-token representing a pause, don't deal with that right now
+                continue
+        elif norm_token.HasField("normalized"):
+            original = norm_token.normalized.clean_token.original_token.name
+            normalized = norm_token.normalized.name
+            curr_sent.append((original, normalized))
+
+    if curr_sent:
+        sentences_with_pairs.append(curr_sent)
+    return sentences_with_pairs
 
 
 def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STANDARD, word_sep='', syllabified='', stress_labels=False,
@@ -70,7 +94,8 @@ def run():
         html_parsed_response = get_clean_text(stub, get_html_string(), html=True)
         print(html_parsed_response.processed_content)
         print("-------------- Normalize --------------")
-        #get_normalized_text(stub, "það voru 55 km eftir")
+        normalized_response = get_normalized_text(stub, "Það voru 55 km eftir. Sagði þjálfari ÍA.")
+        print(normalized_response)
         print("-------------- Transcribe --------------")
         transcribed_response = get_transcribed_text(stub, html_parsed_response.processed_content, custom_dict=get_custom_dict(),
                              syllabified='.', word_sep='.', stress_labels=True, no_tag_tokens_in_content=True)

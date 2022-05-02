@@ -126,11 +126,12 @@ class TTSFrontendServicer(service.PreprocessingServicer):
             if isinstance(token, TagToken):
                 tag_token = msg.TagToken(name=token.name, index=token.token_index)
                 tok = msg.NormalizedTokenList(tag=tag_token)
-                if token.name == SENTENCE_SPLIT:
+                if token.name.strip() == SENTENCE_SPLIT:
                     response.processed_content.append(curr_sent.strip())
                     curr_sent = ''
                 elif not request.no_tag_tokens_in_content:
                     curr_sent += self.add_content(token.name, request)
+
             else:
                 norm_token = self.init_norm_token(token)
                 tok = msg.NormalizedTokenList(normalized=norm_token)
