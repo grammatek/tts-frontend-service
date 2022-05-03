@@ -16,6 +16,11 @@ def get_version(stub):
     return response
 
 
+def get_default_params(stub):
+    response = stub.GetDefaultParameters(empty_pb2.Empty())
+    return response
+
+
 def get_clean_text(stub, text, html=False):
     message = msg_pb2.TextCleanRequest(content=text, parse_html=html)
     response = stub.Clean(message)
@@ -59,9 +64,10 @@ def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STA
     TODO: Dialect param is not acutally available yet, only the DIALECT_STANDARD. Add DIALECT_NORTH to implementation
     """
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
+    norm_message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     phoneme_descr = msg_pb2.PhonemeDescription(dialect=dialect, word_separator=word_sep, syllabified=syllabified,
                                                stress_labels=stress_labels)
-    message = msg_pb2.PreprocessRequest(content=text, domain=norm_domain, pronunciation_dict=custom_dict,
+    message = msg_pb2.PreprocessRequest(content=text, norm_request=norm_message, pronunciation_dict=custom_dict,
                                         description=phoneme_descr, no_tag_tokens_in_content=no_tag_tokens_in_content)
     response = stub.Preprocess(message)
     return response
@@ -87,7 +93,12 @@ def run():
     with grpc.insecure_channel('localhost:8080') as channel:
         stub = preprocessing_service_pb2_grpc.PreprocessingStub(channel)
         print("-------------- GetVersion --------------")
-        get_version(stub)
+        response = get_version(stub)
+        print(response)
+        print("-------------- GetDefaultParams --------")
+        response = get_default_params(stub)
+        print("norm params: \n" + str(response.normalization_params))
+        print("g2p params: \n" + str(response.phoneme_description))
         print("-------------- Clean --------------")
         get_clean_text(stub, "en π námundast í 3.14")
         print("-------------- Clean HTML --------------")

@@ -20,6 +20,7 @@ from generated.services import preprocessing_service_pb2_grpc as service
 #TODO: create an accessor in tts-frontend to ensure sentence split tag are identical
 SENTENCE_SPLIT = '<sentence>'
 
+
 class TTSFrontendServicer(service.PreprocessingServicer):
     """Provides methods that implement functionality of a TTS frontend pipeline.
     For example usage see `tts_frontend_client_example.py` """
@@ -144,7 +145,7 @@ class TTSFrontendServicer(service.PreprocessingServicer):
 
         return response
 
-    def Preprocess(self, request: msg.PreprocessRequest, context, split_sent=True, html=False) -> msg.PreprocessedResponse:
+    def Preprocess(self, request: msg.PreprocessRequest, context) -> msg.PreprocessedResponse:
         """Preprocess text for TTS, including conversion to X-SAMPA. Same settings for cleaning and normalizing
         apply as described in Clean() and Normalize(), and additionally the following parameters can be
         set:
@@ -152,7 +153,7 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         """
         context.set_code(grpc.StatusCode.OK)
         #TODO: add domain param in manager methods
-        if request.domain == msg.NORM_DOMAIN_SPORT:
+        if request.norm_request.domain == msg.NORM_DOMAIN_SPORT:
             domain = 'sport'
         else:
             domain = ''
@@ -164,7 +165,7 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         self.manager.set_g2p_word_separator(request.description.word_separator)
         self.manager.set_g2p_stress(request.description.stress_labels)
         # process the request
-        transcribed_res = self.manager.transcribe(request.content, html)
+        transcribed_res = self.manager.transcribe(request.content, html=request.parse_html, )
         response = msg.PreprocessedResponse()
         # a single response sentence
         curr_sent = ''
@@ -191,13 +192,31 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         return response
 
     def GetDefaultParameters(self, request, context) -> msg.DefaultProcessingResponse:
+        """ Return the default parameters for text cleaning, normalization and phoneme description.
+        We only set the defined default values, proto default values like False for booleans, empty
+        for lists, sets and strings, zero for ints, do not need to be explicitly set here.
+        """
         context.set_code(grpc.StatusCode.OK)
-        return msg.DefaultProcessingResponse
+
+        emoji_repl = msg.EmojiReplacement()
+        emoji_repl.replacement = '.'
+        text_cleaner_params = msg.TextCleanerParams(emoji_replacement=emoji_repl)
+
+        norm_domain = msg.NormalizationDomain(norm_domain=msg.NORM_DOMAIN_OTHER)
+
+        norm_params = msg.NormalizeRequest(cleaner_params=text_cleaner_params, domain=norm_domain, language_code='is-IS')
+
+        phoneme_descr = msg.PhonemeDescription(alphabet=msg.PHONETIC_ALPHABET_SAMPA, format=msg.PHONEME_PLAIN,
+                                               dialect=msg.DIALECT_STANDARD, model=msg.MODEL_LSTM)
+
+        default_param_response = msg.DefaultProcessingResponse(normalization_params=norm_params,
+                                                               phoneme_description=phoneme_descr)
+
+        return default_param_response
 
     def GetVersion(self, request, context):
         context.set_code(grpc.StatusCode.OK)
         return msg.AbiVersionResponse(version=msg.ABI_VERSION.ABI_VERSION_CURRENT)
-
 
 
 def serve():
@@ -213,6 +232,6 @@ def serve():
     server.wait_for_termination()
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     logging.basicConfig()
     serve()
