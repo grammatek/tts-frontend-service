@@ -27,7 +27,7 @@ def get_clean_text(stub, text, html=False):
     return response
 
 
-def get_normalized_text(stub, text):
+def get_normalized_text(stub, text, parse_html=False):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
     message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     response = stub.Normalize(message)
@@ -57,8 +57,8 @@ def get_normalized_text(stub, text):
     return sentences_with_pairs
 
 
-def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STANDARD, word_sep='', syllabified='', stress_labels=False,
-                         no_tag_tokens_in_content=False):
+def get_transcribed_text(stub, text, parse_html=False, custom_dict={}, dialect=msg_pb2.DIALECT_STANDARD, word_sep='',
+                         syllabified='', stress_labels=False, no_tag_tokens_in_content=False):
     """
     Compose a PreprocessRequest from the parameters and send to the Preprocess service.
     TODO: Dialect param is not acutally available yet, only the DIALECT_STANDARD. Add DIALECT_NORTH to implementation
@@ -68,7 +68,7 @@ def get_transcribed_text(stub, text, custom_dict={}, dialect=msg_pb2.DIALECT_STA
     phoneme_descr = msg_pb2.PhonemeDescription(dialect=dialect, word_separator=word_sep, syllabified=syllabified,
                                                stress_labels=stress_labels)
     message = msg_pb2.PreprocessRequest(content=text, norm_request=norm_message, pronunciation_dict=custom_dict,
-                                        description=phoneme_descr, no_tag_tokens_in_content=no_tag_tokens_in_content)
+                                        description=phoneme_descr, no_tag_tokens_in_content=no_tag_tokens_in_content, parse_html=parse_html)
     response = stub.Preprocess(message)
     return response
 
@@ -85,6 +85,12 @@ def get_html_string():
                '<span id="qitl_0597" class="sentence"> Sigrún Gunnarsdóttir hefur íslenskað skilgreiningu hugtaksins ' \
                'um tilfinningu fyrir samhengi í lífinu á eftirfarandi hátt: </span></p>'
 
+
+def get_html_string_with_non_valid_chars():
+    return '<p>o Hugleiða að ráða tímabundið starfsmann í þessa vinnu</p> ' \
+           '<p>· Við þurfum að hafa texta og hljóð af sömu bókum sem hægt er að nota til að búa til aðgengilegar bækur</p>' \
+           '<p>o Hversu margar bækur þarf?</p>' \
+           '<p>§ Því fleiri, því betri</p>'
 
 def get_custom_dict() -> dict:
     return {'eftir': 'E p t I r', 'sögðu': 's 9 k D Y'}
@@ -108,8 +114,18 @@ def run():
         normalized_response = get_normalized_text(stub, "Það voru 55 km eftir. Sagði þjálfari ÍA.")
         print(normalized_response)
         print("-------------- Transcribe --------------")
-        transcribed_response = get_transcribed_text(stub, html_parsed_response.processed_content, custom_dict=get_custom_dict(),
-                             syllabified='.', word_sep='.', stress_labels=True, no_tag_tokens_in_content=True)
+
+        transcribed_response = get_transcribed_text(stub, get_html_string(), parse_html=True, custom_dict=get_custom_dict(),
+                             syllabified='', word_sep='', stress_labels=False, no_tag_tokens_in_content=False)
+
+        print(transcribed_response.processed_content)
+        print("-------------- Transcribe 2--------------")
+
+        transcribed_response = get_transcribed_text(stub, get_html_string_with_non_valid_chars(), parse_html=True,
+                                                    custom_dict=get_custom_dict(),
+                                                    syllabified='', word_sep='', stress_labels=False,
+                                                    no_tag_tokens_in_content=False)
+
         print(transcribed_response.processed_content)
 
 

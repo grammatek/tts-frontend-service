@@ -17,7 +17,7 @@ from generated.messages import preprocessing_message_pb2 as msg
 from generated.services import preprocessing_service_pb2
 from generated.services import preprocessing_service_pb2_grpc as service
 
-#TODO: create an accessor in tts-frontend to ensure sentence split tag are identical
+#TODO: create an accessor in tts-frontend to ensure sentence split tags are identical
 SENTENCE_SPLIT = '<sentence>'
 
 
@@ -25,13 +25,28 @@ class TTSFrontendServicer(service.PreprocessingServicer):
     """Provides methods that implement functionality of a TTS frontend pipeline.
     For example usage see `tts_frontend_client_example.py` """
 
-
     def __init__(self):
-        # init pipeline
+        """
+        Initialize the pipeline.
+        """
         self.manager = Manager()
 
     @staticmethod
-    def init_clean_token(token: CleanToken) -> msg.CleanToken:
+    def add_content(name: str,
+                    request: Union[msg.TextCleanRequest, msg.NormalizeRequest, msg.PreprocessRequest]) -> str:
+        """
+        Compose the string to add to a content string, using word_separator if given. Return the string.
+        """
+        result_str = ''
+        if hasattr(request, 'description'):
+            if request.description.word_separator:
+                result_str = name + f' {request.description.word_separator} '
+        if not result_str:
+            result_str = name + ' '
+
+        return result_str
+
+    def init_clean_token(self, token: CleanToken) -> msg.CleanToken:
         """
         Initialize a cleanToken message from the cleanToken object parameter.
         """
@@ -41,21 +56,17 @@ class TTSFrontendServicer(service.PreprocessingServicer):
 
         return clean_token
 
-    @staticmethod
-    def init_norm_token(token: NormalizedToken) -> msg.NormalizedToken:
+    def init_norm_token(self, token: NormalizedToken) -> msg.NormalizedToken:
         """
         Initialize a normalizedToken message from the normalizedToken object parameter.
         """
         clean = token.clean_token
-        orig = clean.original_token
-        embedded_orig = msg.Token(name=orig.name, index=orig.token_index, span_from=orig.start, span_to=orig.end)
-        embedded_clean = msg.CleanToken(original_token=embedded_orig, name=clean.name, index=clean.token_index)
+        embedded_clean = self.init_clean_token(clean)
         norm_token = msg.NormalizedToken(clean_token=embedded_clean, name=token.name, index=token.token_index)
 
         return norm_token
 
-    @staticmethod
-    def init_transcr_token(token: TranscribedToken) -> msg.TranscribedToken:
+    def init_transcr_token(self, token: TranscribedToken) -> msg.TranscribedToken:
         """
         Initialize a transcribedToken message from the transcribedToken object parameter.
         A transcribedToken contains three embedded tokens: the original input token, the clean token,
@@ -64,24 +75,30 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         a phonetic alphabet (e.g. 'h a l ou').
         """
         norm = token.normalized
-        clean = norm.clean_token
-        orig = clean.original_token
-        embedded_orig = msg.Token(name=orig.name, index=orig.token_index, span_from=orig.start, span_to=orig.end)
-        embedded_clean = msg.CleanToken(original_token=embedded_orig, name=clean.name, index=clean.token_index)
-        embedded_norm = msg.NormalizedToken(clean_token=embedded_clean, name=norm.name)
+        embedded_norm = self.init_norm_token(norm)
         transcribed = msg.TranscribedToken(normalized_token=embedded_norm, name=token.name)
         return transcribed
 
-    @staticmethod
-    def add_content(name: str, request: Union[msg.TextCleanRequest, msg.NormalizeRequest, msg.PreprocessRequest]) -> str:
-        """Compose the string to add to a content string, using word_separator if given. Return the string."""
-        result_str = ''
-        if hasattr(request, 'description'):
-            if request.description.word_separator:
-                result_str = name + f' {request.description.word_separator} '
-        if not result_str:
-            result_str = name + ' '
-        return result_str
+    def set_manager_params(self, request: msg.PreprocessRequest):
+        # add user dictionary, if present
+        self.manager.set_g2p_custom_dict(request.pronunciation_dict)
+        # add g2p settings, if present
+        self.manager.set_g2p_syllab_symbol(request.description.syllabified)
+        self.manager.set_g2p_word_separator(request.description.word_separator)
+        self.manager.set_g2p_stress(request.description.stress_labels)
+
+    def get_domain(self, request: Union[msg.NormalizeRequest, msg.PreprocessRequest]) -> str:
+        # TODO: add domain param in manager methods
+        domain = ''
+        if isinstance(request, msg.NormalizeRequest):
+            domain = request.domain
+        elif isinstance(request, msg.PreprocessRequest):
+            domain = request.norm_request.domain
+
+        if domain == msg.NORM_DOMAIN_SPORT:
+            return 'sport'
+
+        return domain
 
     def Clean(self, request: msg.TextCleanRequest, context) -> msg.TextCleanResponse:
         """Clean text, returns clean text without non-valid chars or symbols.
@@ -115,14 +132,12 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         'tvö til eitt' as in the default domain setting.
         """
         context.set_code(grpc.StatusCode.OK)
-        # TODO: add domain param in manager methods
-        if request.domain == msg.NORM_DOMAIN_SPORT:
-            domain = 'sport'
-        else:
-            domain = ''
+        domain = self.get_domain(request)
+
         normalized_result = self.manager.normalize(request.content, split_sent=True)
         response = msg.NormalizedResponse()
         curr_sent = ''
+        # Assemble the response message from the normalizer results
         for token in normalized_result:
             if isinstance(token, TagToken):
                 tag_token = msg.TagToken(name=token.name, index=token.token_index)
@@ -132,7 +147,6 @@ class TTSFrontendServicer(service.PreprocessingServicer):
                     curr_sent = ''
                 elif not request.no_tag_tokens_in_content:
                     curr_sent += self.add_content(token.name, request)
-
             else:
                 norm_token = self.init_norm_token(token)
                 tok = msg.NormalizedTokenList(normalized=norm_token)
@@ -146,32 +160,22 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         return response
 
     def Preprocess(self, request: msg.PreprocessRequest, context) -> msg.PreprocessedResponse:
-        """Preprocess text for TTS, including conversion to X-SAMPA. Same settings for cleaning and normalizing
-        apply as described in Clean() and Normalize(), and additionally the following parameters can be
-        set:
-        TODO: refactor and extract methods
+        """
+        Preprocess text for TTS, including conversion to X-SAMPA.
         """
         context.set_code(grpc.StatusCode.OK)
-        #TODO: add domain param in manager methods
-        if request.norm_request.domain == msg.NORM_DOMAIN_SPORT:
-            domain = 'sport'
-        else:
-            domain = ''
 
-        # add user dictionary, if present
-        self.manager.set_g2p_custom_dict(request.pronunciation_dict)
-        # add g2p settings, if present
-        self.manager.set_g2p_syllab_symbol(request.description.syllabified)
-        self.manager.set_g2p_word_separator(request.description.word_separator)
-        self.manager.set_g2p_stress(request.description.stress_labels)
+        domain = self.get_domain(request)
+        self.set_manager_params(request)
         # process the request
-        transcribed_res = self.manager.transcribe(request.content, html=request.parse_html, )
+        transcribed_res = self.manager.transcribe(request.content, html=request.parse_html)
         response = msg.PreprocessedResponse()
         # a single response sentence
         curr_sent = ''
         # Assemble the response from the transcribed_res, both the response token list as well as the
         # response processed content (the list of sentence strings)
         for token in transcribed_res:
+            print(token)
             if isinstance(token, TagToken):
                 tag_tok = msg.TagToken(name=token.name, index=token.token_index)
                 tok = msg.TranscribedTokenList(tag=tag_tok)
@@ -180,11 +184,12 @@ class TTSFrontendServicer(service.PreprocessingServicer):
                     curr_sent = ''
                 elif not request.no_tag_tokens_in_content:
                     curr_sent += self.add_content(token.name, request)
-            else:
+                response.tokens.append(tok)
+            elif isinstance(token, TranscribedToken):
                 transcribed_token = self.init_transcr_token(token)
                 tok = msg.TranscribedTokenList(transcribed=transcribed_token)
                 curr_sent += self.add_content(token.name, request)
-            response.tokens.append(tok)
+                response.tokens.append(tok)
 
         if curr_sent:
             response.processed_content.append(curr_sent)
