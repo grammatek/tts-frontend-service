@@ -111,8 +111,15 @@ def run():
         html_parsed_response = get_clean_text(stub, get_html_string(), html=True)
         print(html_parsed_response.processed_content)
         print("-------------- Normalize --------------")
-        normalized_response = get_normalized_text(stub, "Það voru 55 km eftir. Sagði þjálfari ÍA.")
+        normalized_response = get_normalized_text(stub, "Það voru 4 km eftir, sagði þjálfari KR.")
         print(normalized_response)
+        print("-------------- Transcribe --------------")
+
+        transcribed_response = get_transcribed_text(stub, "Það voru 4 km eftir, sagði þjálfari KR.", parse_html=False,
+                                                    custom_dict=get_custom_dict(),
+                                                    syllabified='', word_sep='', stress_labels=False,
+                                                    no_tag_tokens_in_content=False)
+        print(transcribed_response.processed_content)
         print("-------------- Transcribe --------------")
 
         transcribed_response = get_transcribed_text(stub, get_html_string(), parse_html=True, custom_dict=get_custom_dict(),
@@ -126,6 +133,18 @@ def run():
                                                     syllabified='', word_sep='', stress_labels=False,
                                                     no_tag_tokens_in_content=False)
 
+        print(transcribed_response.processed_content)
+
+        with open('src/test_GG.html') as f:
+            input = f.read()
+
+        print("input: ")
+        print(input)
+        transcribed_response = get_transcribed_text(stub, input, parse_html=True,
+                                                    custom_dict=get_custom_dict(),
+                                                    syllabified='', word_sep='', stress_labels=False,
+                                                    no_tag_tokens_in_content=False)
+        print('--------------- Transcribed from file --------------')
         print(transcribed_response.processed_content)
 
 
