@@ -4,7 +4,7 @@ from concurrent import futures
 from typing import Union
 import logging
 
-from manager.tokens import TagToken, CleanToken, NormalizedToken, TranscribedToken
+from manager.tokens import TagToken, Token
 from manager.textprocessing_manager import Manager
 
 sys.path.append(dirname(__file__)+'/generated/')
@@ -46,27 +46,26 @@ class TTSFrontendServicer(service.PreprocessingServicer):
 
         return result_str
 
-    def init_clean_token(self, token: CleanToken) -> msg.CleanToken:
+    def init_clean_token(self, token: Token) -> msg.Token:
         """
         Initialize a cleanToken message from the cleanToken object parameter.
         """
-        orig = token.original_token
-        embedded_orig = msg.Token(name=orig.name, index=orig.token_index, span_from=orig.start, span_to=orig.end)
-        clean_token = msg.CleanToken(original_token=embedded_orig, name=token.name, index=token.token_index)
+        return msg.Token(name=token.name, clean=token.clean, index=token.token_index, span_from=token.start,
+                                  span_to=token.end)
 
-        return clean_token
-
-    def init_norm_token(self, token: NormalizedToken) -> msg.NormalizedToken:
+    def init_norm_token(self, token: Token) -> msg.Token:
         """
-        Initialize a normalizedToken message from the normalizedToken object parameter.
+        Initialize a normalizedToken message from the token object parameter.
         """
-        clean = token.clean_token
-        embedded_clean = self.init_clean_token(clean)
-        norm_token = msg.NormalizedToken(clean_token=embedded_clean, name=token.name, index=token.token_index)
+        clean = self.init_clean_token(token)
+        for norm in token.normalized:
+            norm_token = msg.NormalizedToken(normalized_string=norm.norm_str, pos=norm.pos,
+                                             is_spellcorrected=norm.is_spellcorrected)
+            clean.normalized.append(norm_token)
 
-        return norm_token
+        return clean
 
-    def init_transcr_token(self, token: TranscribedToken) -> msg.TranscribedToken:
+    def init_transcr_token(self, token: Token) -> msg.Token:
         """
         Initialize a transcribedToken message from the transcribedToken object parameter.
         A transcribedToken contains three embedded tokens: the original input token, the clean token,
@@ -74,10 +73,11 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         might be all identical (e.g. 'halló', 'halló', 'halló') but the transcribed token is represented in
         a phonetic alphabet (e.g. 'h a l ou').
         """
-        norm = token.normalized
-        embedded_norm = self.init_norm_token(norm)
-        transcribed = msg.TranscribedToken(normalized_token=embedded_norm, name=token.name)
-        return transcribed
+        normalized = self.init_norm_token(token)
+        for transcr in token.transcribed:
+            transcribed = msg.TranscribedToken(name=transcr)
+            normalized.transcribed.append(transcribed)
+        return normalized
 
     def set_manager_params(self, request: msg.PreprocessRequest):
         # add user dictionary, if present
@@ -115,12 +115,12 @@ class TTSFrontendServicer(service.PreprocessingServicer):
 
             if isinstance(token, TagToken):
                 tag_tok = msg.TagToken(name=token.name, index=token.token_index)
-                tok = msg.CleanTokenList(tag=tag_tok)
+                tok = msg.TokenList(tag=tag_tok)
             else:
                 clean_token = self.init_clean_token(token)
-                tok = msg.CleanTokenList(cleaned=clean_token)
+                tok = msg.TokenList(token=clean_token)
 
-            response.processed_content += token.name + ' '
+            response.processed_content += token.clean + ' '
             response.tokens.append(tok)
 
         return response
@@ -141,7 +141,7 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         for token in normalized_result:
             if isinstance(token, TagToken):
                 tag_token = msg.TagToken(name=token.name, index=token.token_index)
-                tok = msg.NormalizedTokenList(tag=tag_token)
+                tok = msg.TokenList(tag=tag_token)
                 if token.name.strip() == SENTENCE_SPLIT:
                     response.processed_content.append(curr_sent.strip())
                     curr_sent = ''
@@ -149,10 +149,11 @@ class TTSFrontendServicer(service.PreprocessingServicer):
                     curr_sent += self.add_content(token.name, request)
             else:
                 norm_token = self.init_norm_token(token)
-                tok = msg.NormalizedTokenList(normalized=norm_token)
+                tok = msg.TokenList(token=norm_token)
+                for norm in token.normalized:
+                    curr_sent += self.add_content(norm.norm_str, request)
 
             response.tokens.append(tok)
-            curr_sent += self.add_content(token.name, request)
 
         if curr_sent:
             response.processed_content.append(curr_sent)
@@ -178,17 +179,17 @@ class TTSFrontendServicer(service.PreprocessingServicer):
             print(token)
             if isinstance(token, TagToken):
                 tag_tok = msg.TagToken(name=token.name, index=token.token_index)
-                tok = msg.TranscribedTokenList(tag=tag_tok)
+                tok = msg.TokenList(tag=tag_tok)
                 if token.name == SENTENCE_SPLIT:
                     response.processed_content.append(curr_sent.strip())
                     curr_sent = ''
                 elif not request.no_tag_tokens_in_content:
                     curr_sent += self.add_content(token.name, request)
                 response.tokens.append(tok)
-            elif isinstance(token, TranscribedToken):
+            elif isinstance(token, Token):
                 transcribed_token = self.init_transcr_token(token)
-                tok = msg.TranscribedTokenList(transcribed=transcribed_token)
-                curr_sent += self.add_content(token.name, request)
+                tok = msg.TokenList(token=transcribed_token)
+                curr_sent += self.add_content(' '.join(token.transcribed), request)
                 response.tokens.append(tok)
 
         if curr_sent:

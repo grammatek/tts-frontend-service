@@ -27,34 +27,39 @@ def get_clean_text(stub, text, html=False):
     return response
 
 
-def get_normalized_text(stub, text, parse_html=False):
+def get_normalized_tuples_with_original(stub, text, parse_html=False):
     norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
     message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
     response = stub.Normalize(message)
 
     sentences_with_pairs: List[List[Tuple[str, str]]] = []
     curr_sent = []
-    for norm_token in response.tokens:
-        if norm_token.HasField("normalized"):
-            print("normalized: " + norm_token.normalized.name)
-        if norm_token.HasField("tag"):
-            print("tag: " + norm_token.tag.name)
+    for processed_token in response.tokens:
+        if processed_token.HasField("token"):
+            norm_tokens = []
+            for norm in processed_token.token.normalized:
+                norm_tokens.append(norm.normalized_string)
+            original = processed_token.token.name
+            curr_sent.append((original, ' '.join(norm_tokens)))
 
-        if norm_token.HasField("tag"):
-            if norm_token.tag.name == '<sentence>':
+        elif processed_token.HasField("tag"):
+            if processed_token.tag.name == '<sentence>':
                 sentences_with_pairs.append(curr_sent)
                 curr_sent = []
             else:
-                # this is a tag-token representing a pause, don't deal with that right now
-                continue
-        elif norm_token.HasField("normalized"):
-            original = norm_token.normalized.clean_token.original_token.name
-            normalized = norm_token.normalized.name
-            curr_sent.append((original, normalized))
+                curr_sent.append(('', processed_token.tag.name))
 
     if curr_sent:
         sentences_with_pairs.append(curr_sent)
     return sentences_with_pairs
+
+
+def get_normalized_text(stub, text, parse_html=False):
+    norm_domain = msg_pb2.NormalizationDomain(norm_domain=msg_pb2.NORM_DOMAIN_SPORT)
+    message = msg_pb2.NormalizeRequest(content=text, domain=norm_domain)
+    response = stub.Normalize(message)
+
+    return response.processed_content
 
 
 def get_transcribed_text(stub, text, parse_html=False, custom_dict={}, dialect=msg_pb2.DIALECT_STANDARD, word_sep='',
@@ -98,21 +103,26 @@ def get_custom_dict() -> dict:
 def run():
     with grpc.insecure_channel('localhost:8080') as channel:
         stub = preprocessing_service_pb2_grpc.PreprocessingStub(channel)
-        print("-------------- GetVersion --------------")
+        #print("-------------- GetVersion --------------")
         response = get_version(stub)
-        print(response)
-        print("-------------- GetDefaultParams --------")
+        #print(response)
+        #print("-------------- GetDefaultParams --------")
         response = get_default_params(stub)
-        print("norm params: \n" + str(response.normalization_params))
-        print("g2p params: \n" + str(response.phoneme_description))
+        #print("norm params: \n" + str(response.normalization_params))
+        #print("g2p params: \n" + str(response.phoneme_description))
+
         print("-------------- Clean --------------")
-        get_clean_text(stub, "en π námundast í 3.14")
+        clean_response = get_clean_text(stub, "en π námundast í 3.14")
+        print(clean_response.processed_content)
+
         print("-------------- Clean HTML --------------")
         html_parsed_response = get_clean_text(stub, get_html_string(), html=True)
         print(html_parsed_response.processed_content)
+
         print("-------------- Normalize --------------")
         normalized_response = get_normalized_text(stub, "Það voru 4 km eftir, sagði þjálfari KR.")
         print(normalized_response)
+
         print("-------------- Transcribe --------------")
 
         transcribed_response = get_transcribed_text(stub, "Það voru 4 km eftir, sagði þjálfari KR.", parse_html=False,
@@ -120,6 +130,7 @@ def run():
                                                     syllabified='', word_sep='', stress_labels=False,
                                                     no_tag_tokens_in_content=False)
         print(transcribed_response.processed_content)
+
         print("-------------- Transcribe --------------")
 
         transcribed_response = get_transcribed_text(stub, get_html_string(), parse_html=True, custom_dict=get_custom_dict(),
@@ -146,7 +157,7 @@ def run():
                                                     no_tag_tokens_in_content=False)
         print('--------------- Transcribed from file --------------')
         print(transcribed_response.processed_content)
-
+        
 
 if __name__=='__main__':
     logging.basicConfig()
