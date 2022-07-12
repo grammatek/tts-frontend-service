@@ -1,18 +1,20 @@
 # syntax=docker/dockerfile:1
-FROM python:3.8-slim-buster
+FROM python:3.9-slim-buster
 
 ENV PYTHONUNBUFFERED=1
 ENV TTS_FRONTEND=/tts_frontend_service
 
 RUN python3 -m ensurepip
 RUN pip3 install --no-cache --upgrade pip setuptools
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git gcc g++
 
 WORKDIR $TTS_FRONTEND
 
 COPY requirements.txt requirements.txt
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
+#RUN pip3 install --upgrade pip # use 21.3.1 for Fairseq
+RUN pip3 install pip==21.3.1
+#RUN pip3 install editdistance not needed?
+RUN pip3 install -r requirements.txt --force-reinstall
 
 RUN apt-get update -yqq && \
     apt-get install -y curl git
@@ -31,10 +33,10 @@ RUN export JAVA_HOME
 
 RUN git clone --depth 1 https://github.com/googleapis/googleapis
 
-RUN curl -L https://github.com/grammatek/tts-frontend-proto/archive/bc6b4a3c8abd96f8ba65db94118a676016a4a7ea.tar.gz | tar zxvf - \
-    && mv tts-frontend-proto-bc6b4a3c8abd96f8ba65db94118a676016a4a7ea/messages $TTS_FRONTEND/ \
-    && mv tts-frontend-proto-bc6b4a3c8abd96f8ba65db94118a676016a4a7ea/services $TTS_FRONTEND/ \
-    && rm -rf tts-frontend-proto-bc6b4a3c8abd96f8ba65db94118a676016a4a7ea
+RUN curl -L https://github.com/grammatek/tts-frontend-proto/archive/f5a6554026dfa84eb13a57538f820900b4215242.tar.gz | tar zxvf - \
+    && mv tts-frontend-proto-f5a6554026dfa84eb13a57538f820900b4215242/messages $TTS_FRONTEND/ \
+    && mv tts-frontend-proto-f5a6554026dfa84eb13a57538f820900b4215242/services $TTS_FRONTEND/ \
+    && rm -rf tts-frontend-proto-f5a6554026dfa84eb13a57538f820900b4215242
 
 RUN mkdir -p $TTS_FRONTEND/src/generated/
 
