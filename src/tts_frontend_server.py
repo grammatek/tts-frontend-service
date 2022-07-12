@@ -116,11 +116,12 @@ class TTSFrontendServicer(service.PreprocessingServicer):
             if isinstance(token, TagToken):
                 tag_tok = msg.TagToken(name=token.name, index=token.token_index)
                 tok = msg.TokenList(tag=tag_tok)
+                response.processed_content += token.name + ' '
             else:
                 clean_token = self.init_clean_token(token)
                 tok = msg.TokenList(token=clean_token)
+                response.processed_content += token.clean + ' '
 
-            response.processed_content += token.clean + ' '
             response.tokens.append(tok)
 
         return response
@@ -134,7 +135,9 @@ class TTSFrontendServicer(service.PreprocessingServicer):
         context.set_code(grpc.StatusCode.OK)
         domain = self.get_domain(request)
 
-        normalized_result = self.manager.normalize(request.content, split_sent=True)
+        normalized_result = self.manager.normalize(request.content, html=request.parse_html, split_sent=True)
+        for elem in normalized_result:
+            print(elem.to_json())
         response = msg.NormalizedResponse()
         curr_sent = ''
         # Assemble the response message from the normalizer results

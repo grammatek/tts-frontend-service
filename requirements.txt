@@ -1,3 +1,3 @@
 grpcio-tools >= 1.40.0
 grpcio-reflection
-tts-textprocessing @ git+https://github.com/grammatek/tts-frontend@555f2ba99eeb454343d7048f0e14d89fd65a2b5c
+tts-textprocessing @ git+https://github.com/grammatek/tts-frontend@204fbc9cba986b0038c13bb4b4dd308f21aa5480
