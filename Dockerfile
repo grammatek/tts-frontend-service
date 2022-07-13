@@ -13,8 +13,8 @@ WORKDIR $TTS_FRONTEND
 COPY requirements.txt requirements.txt
 #RUN pip3 install --upgrade pip # use 21.3.1 for Fairseq
 RUN pip3 install pip==21.3.1
-#RUN pip3 install editdistance not needed?
-RUN pip3 install -r requirements.txt --force-reinstall
+#RUN pip3 install -r requirements.txt --force-reinstall
+RUN pip3 install -r requirements.txt
 
 RUN apt-get update -yqq && \
     apt-get install -y curl git
